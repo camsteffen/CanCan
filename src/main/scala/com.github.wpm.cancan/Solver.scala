@@ -55,9 +55,7 @@ abstract class Solver(constraintFactory: (Puzzle => ConstraintSet))
   protected def selectCell(markup: Markup, puzzle: Puzzle): Option[Cell] = {
     val u = markup.unsolved
     if (u.isEmpty) None
-    else Some(u.map {
-      case (cell, values) => (values.size, cell)
-    }.min._2)
+    else Some(u.minBy(_._2.size)._1)
   }
 
   protected def guessValue(markup: Markup, cell: Cell): Seq[Int] = markup(cell).toSeq.sorted
@@ -79,10 +77,10 @@ case class OrderByCellThenCage(constraintStrategy: (Puzzle => ConstraintSet) = P
     if (u.isEmpty) None
     else {
       val cageSize = cageAmbiguity(markup, puzzle)
-      Some(u.map {
+      Some(u.minBy {
         case (cell, values) =>
-          (values.size, cageSize(puzzle.containingCages.get(cell)), cell)
-      }.min._3)
+          (values.size, cageSize(puzzle.containingCages.get(cell)))
+      }._1)
     }
   }
 
