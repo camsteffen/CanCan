@@ -19,19 +19,19 @@ class PuzzleSpec extends FlatSpec {
   behavior of "A 2x2 Latin square"
 
   it should "have solutions\n" + ls_2x2_sol1 + "\n" + ls_2x2_sol2 in {
-    expect(Set(Markup(ls_2x2_sol1), Markup(ls_2x2_sol2))) {
+    assertResult(Set(Markup(ls_2x2_sol1), Markup(ls_2x2_sol2))) {
       Set() ++ solutions(Puzzle(2))
     }
   }
 
   it should "print as\n" + ls_2x2_puzzle in {
-    expect(ls_2x2_puzzle) {
+    assertResult(ls_2x2_puzzle) {
       Puzzle(2).toString
     }
   }
 
   it should "have an empty cage size distribution" in {
-    expect(Map[Int, Int]()) {
+    assertResult(Map[Int, Int]()) {
       Puzzle(2).cageSizes
     }
   }
@@ -51,19 +51,19 @@ class PuzzleSpec extends FlatSpec {
   behavior of "The puzzle\n" + kenken1_4x4_puzzle
 
   it should "have solution\n" + kenken1_4x4_solution in {
-    expect(List(Markup(kenken1_4x4_solution))) {
+    assertResult(List(Markup(kenken1_4x4_solution))) {
       solutions(kenken1_4x4_puzzle)
     }
   }
 
   it should "print as\n" + kenken1_4x4_puzzle in {
-    expect(kenken1_4x4_puzzle) {
+    assertResult(kenken1_4x4_puzzle) {
       Puzzle(kenken1_4x4_puzzle).toString
     }
   }
 
   it should "have the size distribution 2->2 3->4" in {
-    expect(Map[Int, Int](2 -> 2, 3 -> 4)) {
+    assertResult(Map[Int, Int](2 -> 2, 3 -> 4)) {
       Puzzle(kenken1_4x4_puzzle).cageSizes
     }
   }
@@ -83,13 +83,13 @@ class PuzzleSpec extends FlatSpec {
   behavior of "The puzzle\n" + kenken2_4x4_puzzle
 
   it should "have solution\n" + kenken2_4x4_solution in {
-    expect(List(Markup(kenken2_4x4_solution))) {
+    assertResult(List(Markup(kenken2_4x4_solution))) {
       solutions(kenken2_4x4_puzzle)
     }
   }
 
   it should "print as\n" + kenken2_4x4_puzzle in {
-    expect(kenken2_4x4_puzzle) {
+    assertResult(kenken2_4x4_puzzle) {
       Puzzle(kenken2_4x4_puzzle).toString
     }
   }
@@ -110,13 +110,13 @@ class PuzzleSpec extends FlatSpec {
   behavior of "The puzzle\n" + kenken3_4x4_puzzle
 
   it should "have solution\n" + kenken3_4x4_solution in {
-    expect(List(Markup(kenken3_4x4_solution))) {
+    assertResult(List(Markup(kenken3_4x4_solution))) {
       solutions(kenken3_4x4_puzzle)
     }
   }
 
   it should "print as\n" + kenken3_4x4_puzzle in {
-    expect(kenken3_4x4_puzzle) {
+    assertResult(kenken3_4x4_puzzle) {
       Puzzle(kenken3_4x4_puzzle).toString
     }
   }
@@ -141,13 +141,13 @@ class PuzzleSpec extends FlatSpec {
   behavior of "The puzzle\n" + kenken_6x6_puzzle
 
   it should "have solution\n" + kenken_6x6_solution in {
-    expect(List(Markup(kenken_6x6_solution))) {
+    assertResult(List(Markup(kenken_6x6_solution))) {
       solutions(kenken_6x6_puzzle)
     }
   }
 
   it should "print as\n" + kenken_6x6_puzzle in {
-    expect(kenken_6x6_puzzle) {
+    assertResult(kenken_6x6_puzzle) {
       Puzzle(kenken_6x6_puzzle).toString
     }
   }
@@ -156,7 +156,7 @@ class PuzzleSpec extends FlatSpec {
                      |a b
                      |c d""".stripMargin
   "An unsolvable puzzle" should "have no solutions" in {
-    expect(Stream.empty) {
+    assertResult(Stream.empty) {
       solutions(unsolvable)
     }
   }

@@ -11,13 +11,13 @@ class ConstraintSpec extends FlatSpec {
   def r5Fixture = PreemptiveSetConstraint(Markup.row(5)(1))
 
   it should "have size 5" in {
-    expect(5) {
+    assertResult(5) {
       r5Fixture.size
     }
   }
 
   it should "handle a single solved cell" in {
-    expect(Some(List(
+    assertResult(Some(List(
       (Cell(1, 2), Set(2, 3, 4, 5)),
       (Cell(1, 3), Set(2, 3, 4, 5)),
       (Cell(1, 4), Set(2, 3, 4, 5)),
@@ -33,7 +33,7 @@ class ConstraintSpec extends FlatSpec {
   }
 
   it should "handle multiple preemptive sets" in {
-    expect(Some(List((Cell(1, 5), Set(5))))) {
+    assertResult(Some(List((Cell(1, 5), Set(5))))) {
       val m = Markup(
         """12 12 34 34 12345
           |12345 12345 12345 12345 12345
@@ -45,7 +45,7 @@ class ConstraintSpec extends FlatSpec {
   }
 
   it should "do nothing if there are no preemptive sets" in {
-    expect(Some(Nil)) {
+    assertResult(Some(Nil)) {
       val m = Markup(
         """12345 12345 12345 12345 12345
           |12345 12345 12345 12345 12345
@@ -61,13 +61,13 @@ class ConstraintSpec extends FlatSpec {
   def preemptiveFixture = PreemptiveSetConstraint(Markup.row(6)(1))
 
   it should "have size 6" in {
-    expect(6) {
+    assertResult(6) {
       preemptiveFixture.size
     }
   }
 
   it should "remove invalid candidates" in {
-    expect(Some(List(
+    assertResult(Some(List(
       (Cell(1, 2), Set(4)),
       (Cell(1, 5), Set(5, 6)),
       (Cell(1, 6), Set(5, 6))
@@ -83,7 +83,7 @@ class ConstraintSpec extends FlatSpec {
   }
 
   it should "do nothing to an invalid markup" in {
-    expect(Some(Nil)) {
+    assertResult(Some(Nil)) {
       preemptiveFixture(Markup(
         """1 1 123456 123456 123456 123456
           |123456 123456 123456 123456 123456 123456
@@ -97,7 +97,7 @@ class ConstraintSpec extends FlatSpec {
   behavior of "An all-different constraint"
 
   it should "detect an invalid configuration with multiple solved cells" in {
-    expect(None) {
+    assertResult(None) {
       val m = Markup(
         """1 12345 12345 12345 1
           |12345 12345 12345 12345 12345
@@ -109,7 +109,7 @@ class ConstraintSpec extends FlatSpec {
   }
 
   it should "leave the row (23 5 6 4 3 2) unchanged" in {
-    expect(Some(Nil)) {
+    assertResult(Some(Nil)) {
       val m = Markup(
         """23 5 6 4 3 2
           |123456 123456 123456 123456 123456 123456
@@ -122,13 +122,13 @@ class ConstraintSpec extends FlatSpec {
   }
 
   "A uniqueness constraint on row 2 of a 3x3 puzzle" should "have the string representation 'Uniqueness: Row 2'" in {
-    expect("Uniqueness: Row 2") {
+    assertResult("Uniqueness: Row 2") {
       UniquenessConstraint(Seq(Cell(2, 1), Cell(2, 2), Cell(2, 3))).toString()
     }
   }
 
   "A uniqueness constraint on col 2 of a 3x3 puzzle" should "have the string representation 'Uniquenss: Col 2'" in {
-    expect("Uniqueness: Col 2") {
+    assertResult("Uniqueness: Col 2") {
       UniquenessConstraint(Seq(Cell(1, 2), Cell(2, 2), Cell(3, 2))).toString()
     }
   }
@@ -137,23 +137,23 @@ class ConstraintSpec extends FlatSpec {
   val times6 = TimesConstraint(6, List(Cell(1, 1), Cell(1, 2), Cell(2, 1)))
 
   it should "have a size 3" in {
-    expect(3) {
+    assertResult(3) {
       times6.size
     }
   }
 
   it should "constrain 1234 1234 1234 to 123 123 123" in {
-    expect(Some(List((Cell(1, 1), Set(1, 2, 3)), (Cell(1, 2), Set(1, 2, 3)), (Cell(2, 1), Set(1, 2, 3))))) {
+    assertResult(Some(List((Cell(1, 1), Set(1, 2, 3)), (Cell(1, 2), Set(1, 2, 3)), (Cell(2, 1), Set(1, 2, 3))))) {
       times6(Markup(4))
     }
   }
 
   it should "stringify as '6x' and '*\t6\tA1 A2 B1'" in {
-    expect("6x") {
+    assertResult("6x") {
       times6.toString()
     }
 
-    expect("*\t6\tA1 A2 B1") {
+    assertResult("*\t6\tA1 A2 B1") {
       times6.toNekNekString
     }
   }
@@ -162,29 +162,29 @@ class ConstraintSpec extends FlatSpec {
   val plus5 = PlusConstraint(5, List(Cell(1, 1), Cell(1, 2), Cell(2, 1)))
 
   it should "have a size 3" in {
-    expect(3) {
+    assertResult(3) {
       times6.size
     }
   }
 
   it should "constrain 1234 1234 1234 to 123 123 123" in {
-    expect(Some(List((Cell(1, 1), Set(1, 2, 3)), (Cell(1, 2), Set(1, 2, 3)), (Cell(2, 1), Set(1, 2, 3))))) {
+    assertResult(Some(List((Cell(1, 1), Set(1, 2, 3)), (Cell(1, 2), Set(1, 2, 3)), (Cell(2, 1), Set(1, 2, 3))))) {
       plus5(Markup(4))
     }
   }
 
   it should "constrain 1 23 123 to 1 23 123" in {
-    expect(Some(Nil)) {
+    assertResult(Some(Nil)) {
       plus5(Markup(4) ++ List((Cell(1, 1), Set(1)), (Cell(1, 2), Set(2, 3)), (Cell(2, 1), Set(1, 2))))
     }
   }
 
   it should "stringify as '5+' and '*\t5\tA1 A2 B1'" in {
-    expect("5+") {
+    assertResult("5+") {
       plus5.toString()
     }
 
-    expect("+\t5\tA1 A2 B1") {
+    assertResult("+\t5\tA1 A2 B1") {
       plus5.toNekNekString
     }
   }

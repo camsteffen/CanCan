@@ -7,7 +7,7 @@ import org.scalatest.FlatSpec
  */
 class MiscellaneousSpec extends FlatSpec {
   "A matrix of strings" should "print neatly" in {
-    expect( """ cat    dog   mouse
+    assertResult( """ cat    dog   mouse
               |apple  banana  pear
               | red    blue  yellow""".stripMargin) {
       matrixToString(List(
