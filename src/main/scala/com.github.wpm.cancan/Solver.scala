@@ -55,7 +55,7 @@ abstract class Solver(constraintFactory: (Puzzle => ConstraintSet))
   protected def selectCell(markup: Markup, puzzle: Puzzle): Option[Cell] = {
     val u = markup.unsolved
     if (u.isEmpty) None
-    else Some(u.toSeq.map {
+    else Some(u.map {
       case (cell, values) => (values.size, cell)
     }.min._2)
   }
@@ -66,20 +66,20 @@ abstract class Solver(constraintFactory: (Puzzle => ConstraintSet))
 /**
  * Make a guess in a cell that has the fewest possible values.
  */
-case class OrderByCellSize(constraintStrategy: (Puzzle => ConstraintSet) = PreemptiveSet(_))
+case class OrderByCellSize(constraintStrategy: (Puzzle => ConstraintSet) = PreemptiveSet)
   extends Solver(constraintStrategy)
 
 /**
  * Make a guess in a cell that has the fewest possible values, then by cage ambiguity.
  */
-case class OrderByCellThenCage(constraintStrategy: (Puzzle => ConstraintSet) = PreemptiveSet(_))
+case class OrderByCellThenCage(constraintStrategy: (Puzzle => ConstraintSet) = PreemptiveSet)
   extends Solver(constraintStrategy) {
   override protected def selectCell(markup: Markup, puzzle: Puzzle): Option[Cell] = {
     val u = markup.unsolved
     if (u.isEmpty) None
     else {
       val cageSize = cageAmbiguity(markup, puzzle)
-      Some(u.toSeq.map {
+      Some(u.map {
         case (cell, values) =>
           (values.size, cageSize(puzzle.containingCages.get(cell)), cell)
       }.min._3)
@@ -101,7 +101,7 @@ case class OrderByCellThenCage(constraintStrategy: (Puzzle => ConstraintSet) = P
  * @param strategyFactory function that creates a [[com.github.wpm.cancan.ConstraintSet]] from a
  *                        [[com.github.wpm.cancan.Puzzle]]
  */
-case class OracleSolver(solution: Markup, strategyFactory: (Puzzle => ConstraintSet) = PreemptiveSet(_))
+case class OracleSolver(solution: Markup, strategyFactory: (Puzzle => ConstraintSet) = PreemptiveSet)
   extends Solver(strategyFactory) {
   require(solution.isSolution, "Oracle solution is ambiguous\n" + solution)
 
@@ -145,11 +145,11 @@ object Solver {
         args match {
           case Nil => (positional.reverse, option)
           case "-a" :: tail => parseCommandLineRec(tail, positional, option + ('all -> ""))
-          case "-m" :: m :: tail if (m.matches( """\d+""")) =>
+          case "-m" :: m :: tail if m.matches( """\d+""") =>
             parseCommandLineRec(tail, positional, option + ('max -> m))
           case "-v" :: tail => parseCommandLineRec(tail, positional, option + ('validate -> ""))
-          case "-h" :: tail => Dispatcher.error(usage)
-          case s :: tail if (s(0) == '-') => Dispatcher.error("Invalid switch " + s)
+          case "-h" :: _ => Dispatcher.error(usage)
+          case s :: _ if s(0) == '-' => Dispatcher.error("Invalid switch " + s)
           case arg :: tail => parseCommandLineRec(tail, arg :: positional, option)
         }
       }
@@ -163,19 +163,20 @@ object Solver {
     }
 
     val (filenames, firstOnly, validate, max) = parseCommandLine(args)
-    filenames.flatMap(readPuzzlesFromFile(_)).zipWithIndex.foreach {
+    filenames.flatMap(readPuzzlesFromFile).zipWithIndex.foreach {
       case (puzzle, i) =>
         println((i + 1) + ".\n" + puzzle + "\n")
         val (ss, remaining) = max match {
           case Some(m) => cappedSolutions(puzzle, m)
           case None => (solutions(puzzle), false)
         }
-        for (solution <- (if (firstOnly) ss.headOption.toStream else ss)) {
+        for (solution <- if (firstOnly) ss.headOption.toStream else ss) {
           println(solution)
           println(if (validate)
-            puzzle.isPossibleSolution(solution) match {
-              case true => "VALID\n"
-              case false => "INVALID\n"
+            if (puzzle.isPossibleSolution(solution)) {
+              "VALID\n"
+            } else {
+              "INVALID\n"
             }
           else "")
         }

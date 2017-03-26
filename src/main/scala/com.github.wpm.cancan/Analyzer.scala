@@ -22,10 +22,10 @@ object Analyzer {
 
     def parseCommandLine(args: Array[String]): (Seq[String], Solver) = {
       def select(cageOrder: Boolean, latinSquare: Boolean): Solver = (cageOrder, latinSquare) match {
-        case (true, true) => OrderByCellThenCage(LatinSquare(_))
-        case (true, false) => OrderByCellThenCage(PreemptiveSet(_))
-        case (false, true) => OrderByCellSize(LatinSquare(_))
-        case (false, false) => OrderByCellSize(PreemptiveSet(_))
+        case (true, true) => OrderByCellThenCage(LatinSquare)
+        case (true, false) => OrderByCellThenCage(PreemptiveSet)
+        case (false, true) => OrderByCellSize(LatinSquare)
+        case (false, false) => OrderByCellSize(PreemptiveSet)
       }
 
       @tailrec
@@ -34,10 +34,10 @@ object Analyzer {
                               option: Map[Symbol, String]): (List[String], Map[Symbol, String]) = {
         args match {
           case Nil => (positional.reverse, option)
-          case "-h" :: tail => Dispatcher.error(usage)
+          case "-h" :: _ => Dispatcher.error(usage)
           case "-l" :: tail => parseCommandLineRec(tail, positional, option + ('latinSquare -> ""))
           case "-c" :: tail => parseCommandLineRec(tail, positional, option + ('cageOrder -> ""))
-          case s :: tail if (s(0) == '-') => Dispatcher.error("Invalid switch " + s)
+          case s :: _ if s(0) == '-' => Dispatcher.error("Invalid switch " + s)
           case arg :: tail => parseCommandLineRec(tail, arg :: positional, option)
         }
       }
@@ -47,7 +47,7 @@ object Analyzer {
     }
 
     val (filenames, searchStrategy) = parseCommandLine(args)
-    val puzzles = filenames.flatMap(readPuzzlesFromFile(_))
+    val puzzles = filenames.flatMap(readPuzzlesFromFile)
     var first = 0.0
     var all = 0.0
     puzzles.zipWithIndex.foreach {

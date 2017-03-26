@@ -1,7 +1,10 @@
 package com.github.wpm.cancan
 
+import com.github.wpm.cancan.Puzzle.PuzzleParser
+
 import util.parsing.input.Reader
 import scala.IllegalArgumentException
+import scala.util.matching.Regex
 
 /**
  * A [[http://www.kenken.com KenKen]] puzzle.
@@ -18,7 +21,7 @@ case class Puzzle(n: Int, cageConstraints: Set[CageConstraint] = Set()) {
     Map() ++ Constraint.constraintMap(cageConstraints).map {
       case (cell, cages) =>
         require(cages.size == 1, "Multiple cages for cell " + cell)
-        (cell -> cages.head)
+        cell -> cages.head
     }
   }
 
@@ -32,7 +35,7 @@ case class Puzzle(n: Int, cageConstraints: Set[CageConstraint] = Set()) {
    * @param markup the markup to check
    * @return `true` if the markup satisfies the constrains, `false` if any constraints are violated
    */
-  def isPossibleSolution(markup: Markup): Boolean = validator(markup) != None
+  def isPossibleSolution(markup: Markup): Boolean = validator(markup).isDefined
 
   /**
    * Counts of cage sizes in the puzzle
@@ -56,7 +59,7 @@ case class Puzzle(n: Int, cageConstraints: Set[CageConstraint] = Set()) {
   /**
    * This is the inverse of `KenKen(s)`
    */
-  override def toString = {
+  override def toString: String = {
     def base26AlphabeticString(n: Int) = {
       def digits(n: Int, base: Int): Stream[Int] =
         (n % base) #:: (if (n / base > 0) digits(n / base, base) else Stream[Int]())
@@ -74,8 +77,8 @@ case class Puzzle(n: Int, cageConstraints: Set[CageConstraint] = Set()) {
       case (cell, cage) => (cell, cageToName(cage))
     }
     // Table of cage names using '.' for cells not in cages.
-    val table = for (r <- (1 to n)) yield {
-      for (c <- (1 to n); cell = Cell(r, c)) yield cellToName.getOrElse(cell, ".")
+    val table = for (r <- 1 to n) yield {
+      for (c <- 1 to n; cell = Cell(r, c)) yield cellToName.getOrElse(cell, ".")
     }
     // List of cage constraints followed by markup of letters representing cages.
     val cageKey = cageToName.map {
@@ -99,8 +102,8 @@ object Puzzle {
    * Parser of a string representation of a [[com.github.wpm.cancan.Puzzle]].
    */
   object PuzzleParser extends MultilineParser {
-    val cellLabel = """\w+""".r
-    val opRegex = """(\d+)([+-x/])?""".r
+    val cellLabel: Regex = """\w+""".r
+    val opRegex: Regex = """(\d+)([+-x/])?""".r
 
     // 7+
     def op: Parser[(Int, String)] = opRegex ^^ {
@@ -160,9 +163,9 @@ object Puzzle {
 
     def puzzles: Parser[List[Puzzle]] = repsep(puzzle, rep1(eol)) <~ opt(rep(eol))
 
-    implicit def parsePuzzlesString(s: String) = parseAll(puzzles, s)
+    implicit def parsePuzzlesString(s: String): PuzzleParser.ParseResult[List[Puzzle]] = parseAll(puzzles, s)
 
-    implicit def parsePuzzlesFile(r: Reader[Char]) = parseAll(puzzles, r)
+    implicit def parsePuzzlesFile(r: Reader[Char]): PuzzleParser.ParseResult[List[Puzzle]] = parseAll(puzzles, r)
   }
 
   /**
@@ -180,7 +183,7 @@ object Puzzle {
   /**
    * Read a set of KenKen puzzles from a file or string
    */
-  def parsePuzzles(implicit r: PuzzleParser.ParseResult[List[Puzzle]]) = r match {
+  def parsePuzzles(implicit r: PuzzleParser.ParseResult[List[Puzzle]]): List[Puzzle] = r match {
     case PuzzleParser.Success(a, _) => a
     case e: PuzzleParser.Failure => throw new IllegalArgumentException(e.toString())
   }

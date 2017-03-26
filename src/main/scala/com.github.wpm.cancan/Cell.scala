@@ -8,7 +8,7 @@ package com.github.wpm.cancan
  * @param col cell column
  */
 case class Cell(row: Int, col: Int) extends Ordered[Cell] {
-  override def toString = "(%d,%d)".format(row, col)
+  override def toString: String = "(%d,%d)".format(row, col)
 
   /**
    * String representation in the format recognized by the [[http://www.mlsite.net/neknek NekNek solver]].
@@ -18,12 +18,12 @@ case class Cell(row: Int, col: Int) extends Ordered[Cell] {
     ('A'.toInt + row - 1).toChar + col.toString
   }
 
-  def compare(that: Cell) = row - that.row match {
+  def compare(that: Cell): Int = row - that.row match {
     case 0 => col - that.col
     case c => c
   }
 }
 
 object Cell {
-  implicit def tupleToCell(tuple: (Int, Int)) = Cell(tuple._1, tuple._2)
+  implicit def tupleToCell(tuple: (Int, Int)): Cell = Cell(tuple._1, tuple._2)
 }

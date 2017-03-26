@@ -1,6 +1,7 @@
 package com.github.wpm.cancan
 
 import annotation.tailrec
+import scala.collection.immutable
 
 /**
  * Set of constraints for a puzzle that can be applied to a markup.
@@ -29,12 +30,11 @@ abstract class ConstraintSet(puzzle: Puzzle) {
     else {
       val constraint = constraints.head
       constraint(markup) match {
-        case Some(changes) => {
+        case Some(changes) =>
           val triggeredConstraints = changes.flatMap {
             case (cell, _) => cellMap(cell)
           }
           apply(markup ++ changes, constraints ++ triggeredConstraints - constraint)
-        }
         case None => None
       }
     }
@@ -46,9 +46,9 @@ abstract class ConstraintSet(puzzle: Puzzle) {
    * @param constraints function that creates constraints for a given row or column
    * @return row and column constraints for the entire puzzle
    */
-  protected def rowColumnConstraints(constraints: Seq[Cell] => Seq[Constraint]) = {
+  protected def rowColumnConstraints(constraints: Seq[Cell] => Seq[Constraint]): immutable.IndexedSeq[Constraint] = {
     val n = puzzle.n
-    for {i <- (1 to n)
+    for {i <- 1 to n
          cells <- Seq(Markup.row(n)(i), Markup.col(n)(i))
          constraint <- constraints(cells)
     } yield constraint
@@ -63,9 +63,9 @@ abstract class ConstraintSet(puzzle: Puzzle) {
  * @param puzzle puzzle to which to apply the constraints
  */
 case class LatinSquare(puzzle: Puzzle) extends ConstraintSet(puzzle) {
-  override val cellMap =
+  override val cellMap: Map[Cell, Set[Constraint]] =
     Constraint.constraintMap(puzzle.cageConstraints ++
-      rowColumnConstraints((cells => Seq(AllDifferentConstraint(cells)))))
+      rowColumnConstraints(cells => Seq(AllDifferentConstraint(cells))))
 }
 
 /**
@@ -77,11 +77,11 @@ case class LatinSquare(puzzle: Puzzle) extends ConstraintSet(puzzle) {
  * @param puzzle puzzle to which to apply the constraints
  */
 case class PreemptiveSet(puzzle: Puzzle) extends ConstraintSet(puzzle) {
-  override val cellMap =
+  override val cellMap: Map[Cell, Set[Constraint]] =
     Constraint.constraintMap(puzzle.cageConstraints ++
-      rowColumnConstraints((cells => Seq(
+      rowColumnConstraints(cells => Seq(
         AllDifferentConstraint(cells),
         PreemptiveSetConstraint(cells),
         UniquenessConstraint(cells)
-      ))))
+      )))
 }

@@ -38,7 +38,7 @@ object Generator {
   /**
    * Probability of assigning an associative operator to a 2-cell cage
    */
-  val defaultAssociativeProbability = 1 / 3.0
+  val defaultAssociativeProbability: Double = 1 / 3.0
 
   /**
    * Generate a random puzzle and its unique solution.
@@ -83,7 +83,7 @@ object Generator {
     // Generate a random Latin Square then keep generating cage layouts for it until we have one that meets our
     // criteria.
     val solution = randomLatinSquare(n)
-    val cells = for (x <- (1 to n); y <- (1 to n)) yield Cell(x, y)
+    val cells = for (x <- 1 to n; y <- 1 to n) yield Cell(x, y)
     val cages =
       Iterator.continually(randomCageLayout(cells, cageSize)).find(specifiedCells(_, specifiedProportion)).get
     (puzzleFromLayout(solution, cages), solution)
@@ -91,7 +91,7 @@ object Generator {
 
   // Does the puzzle have an acceptable number of single-cell constraints?
   private def specifiedCells(cages: Set[_ <: Traversable[Cell]], specifiedProportion: Double): Boolean = {
-    val size1Cages = cages.filter(cage => cage.size == 1).size
+    val size1Cages = cages.count(cage => cage.size == 1)
     size1Cages / cages.size.toDouble <= specifiedProportion
   }
 
@@ -110,7 +110,7 @@ object Generator {
 
     def randomNonAssociativeConstraint(values: Seq[Int]) = {
       require(values.size == 2)
-      val (smaller, larger) = (values.sorted.head, values.sorted.last)
+      val (smaller, larger) = (values.min, values.max)
       require(smaller != larger)
       shuffle(MinusConstraint(larger - smaller, cage.head, cage.last) ::
         (if (larger % smaller == 0) List(DivideConstraint(larger / smaller, cage.head, cage.last)) else Nil)).head
@@ -138,7 +138,7 @@ object Generator {
    */
   def randomLatinSquare(n: Int): Seq[Seq[Int]] = {
     def rotate[E](xs: List[E]) = (xs.head :: xs.tail.reverse).reverse
-    shuffle((List(shuffle((1 to n).toList)) /: (1 to n - 1)) {
+    shuffle((List(shuffle((1 to n).toList)) /: (1 until n)) {
       case (rows, _) => rotate(rows.head) :: rows
     })
   }
@@ -159,9 +159,9 @@ object Generator {
       def randomUndirectedEdges(cell: Cell) = {
         // Cells above, below, to the left and right of a cell
         val adjacentCells = {
-          for (x <- (-1 to 1);
-               y <- (-1 to 1)
-               if ((x == 0 || y == 0) && x != y)
+          for (x <- -1 to 1;
+               y <- -1 to 1
+               if (x == 0 || y == 0) && x != y
           )
           yield Cell(x + cell.row, y + cell.col)
         }.filter(cells.contains(_))
@@ -229,11 +229,11 @@ object Generator {
     private val psNorm = ps.map(_ / ps.sum)
     private val cdf = (1 to ps.size).map(psNorm.slice(0, _).sum)
 
-    def sample() = cdf.indexWhere(_ > nextDouble) + 1
+    def sample(): Int = cdf.indexWhere(_ > nextDouble) + 1
 
     def max: Int = cdf.size
 
-    override def toString =
+    override def toString: String =
       psNorm.map("%.3f".format(_)).zipWithIndex.map(t => t._2 + ":" + t._1).mkString("[", ", ", "]")
   }
 
@@ -282,18 +282,18 @@ object Generator {
         args match {
           case Nil => (positional.reverse, option)
           case "-n" :: tail => parseCommandLineRec(tail, positional, option + ('nonUnique -> ""))
-          case "-m" :: m :: tail if (m.matches( """\d+""")) =>
+          case "-m" :: m :: tail if m.matches( """\d+""") =>
             parseCommandLineRec(tail, positional, option + ('maxSearch -> m))
-          case "-c" :: m :: tail if (NumberListParser.matches(m)) =>
+          case "-c" :: m :: tail if NumberListParser.matches(m) =>
             parseCommandLineRec(tail, positional, option + ('cageDistribution -> m))
-          case "-s" :: m :: tail if (m.matches( """0(\.\d*)?""")) =>
+          case "-s" :: m :: tail if m.matches( """0(\.\d*)?""") =>
             parseCommandLineRec(tail, positional, option + ('specified -> m))
-          case "-a" :: m :: tail if (m.matches( """0(\.\d*)?""")) =>
+          case "-a" :: m :: tail if m.matches( """0(\.\d*)?""") =>
             parseCommandLineRec(tail, positional, option + ('associative -> m))
-          case "-h" :: tail => Dispatcher.error(usage)
-          case s :: tail if (s(0) == '-') => Dispatcher.error("Invalid switch " + s)
-          case arg :: tail if (arg.matches( """\d+""")) => parseCommandLineRec(tail, arg :: positional, option)
-          case arg :: tail => Dispatcher.error("Invalid argument " + arg)
+          case "-h" :: _ => Dispatcher.error(usage)
+          case s :: _ if s(0) == '-' => Dispatcher.error("Invalid switch " + s)
+          case arg :: tail if arg.matches( """\d+""") => parseCommandLineRec(tail, arg :: positional, option)
+          case arg :: _ => Dispatcher.error("Invalid argument " + arg)
         }
       }
       val (positional, option) = parseCommandLineRec(args.toList, Nil, Map())
@@ -316,14 +316,14 @@ object Generator {
       }
       Dispatcher.errorIf(associativeProbability < 0 || associativeProbability > 1,
         "Invalid associative probability " + associativeProbability)
-      (positional(0).toInt, positional(1).toInt, !option.contains('nonUnique), maxSearch,
+      (positional.head.toInt, positional(1).toInt, !option.contains('nonUnique), maxSearch,
         cageSize, specifiedProportion, associativeProbability)
     }
 
     def prepend(prefix: String, s: String) = s.split("\n").map(prefix + _).mkString("\n")
 
     def mapSum(m1: Map[Int, Int], m2: Map[Int, Int]) =
-      Map() ++ (m1.keys ++ m2.keys).map(k => (k -> (m1.getOrElse(k, 0) + m2.getOrElse(k, 0))))
+      Map() ++ (m1.keys ++ m2.keys).map(k => k -> (m1.getOrElse(k, 0) + m2.getOrElse(k, 0)))
 
     def averagesTable(averages: Map[Int, Double]) =
       (1 to averages.keys.max).map(i => "%d: %.5f".format(i, averages.getOrElse(i, 0.0))).mkString("\n")
@@ -353,6 +353,6 @@ object Generator {
     println(prepend("# ", if (unique) "Unique solutions, maximum search " + maxSearch else "Non-unique solutions"))
     println("# Average difficulty: %.1f".format(totalDifficulty / numPuzzles.toDouble))
     println(prepend("# ", "Cage Size Macro Average:\n" +
-      averagesTable(Map() ++ macroCageSize.map(kv => (kv._1 -> kv._2 / totalCages.toDouble)))))
+      averagesTable(Map() ++ macroCageSize.map(kv => kv._1 -> kv._2 / totalCages.toDouble))))
   }
 }

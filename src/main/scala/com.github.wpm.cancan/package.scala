@@ -2,6 +2,7 @@ package com.github.wpm
 
 import collection.immutable.PagedSeq
 import io.Source
+import scala.util.matching.Regex
 import util.parsing.combinator.RegexParsers
 import util.parsing.input.PagedSeqReader
 
@@ -67,14 +68,14 @@ package object cancan {
    * @tparam T object in the array
    * @return string representation
    */
-  def matrixToString[T](matrix: Traversable[Traversable[T]]) = {
+  def matrixToString[T](matrix: Traversable[Traversable[T]]): String = {
     def centered(s: String, width: Int) = {
       val pad = (width - s.length) / 2
       ("%-" + width + "s").format(" " * pad + s)
     }
     def stripTrailing(s: String) = s.replaceAll( """\s+$""", "")
 
-    val widest = (for (row <- matrix; col <- row) yield col.toString.size).max
+    val widest = (for (row <- matrix; col <- row) yield col.toString.length).max
     matrix.map {
       row => stripTrailing(row.map(col => centered(col.toString, widest)).mkString(" "))
     }.mkString("\n")
@@ -82,10 +83,10 @@ package object cancan {
 
   trait MultilineParser extends RegexParsers {
     override val skipWhitespace = false
-    val inLineWhitespace = """[ \t]+""".r
-    val eol = sys.props("line.separator")
-    val eoi = """\z""".r
-    val lineDelimiter = (eol | eoi)
+    val inLineWhitespace: Regex = """[ \t]+""".r
+    val eol: String = sys.props("line.separator")
+    val eoi: Regex = """\z""".r
+    val lineDelimiter: Parser[String] = eol | eoi
   }
 
 }

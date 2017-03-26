@@ -1,7 +1,10 @@
 package com.github.wpm.cancan
 
-import scala.collection.GenTraversableOnce
+import scala.collection.{GenTraversableOnce, immutable}
 import java.lang.IllegalArgumentException
+
+import com.github.wpm.cancan.Markup.MarkupParser
+
 import scala.util.parsing.input.Reader
 
 /**
@@ -22,8 +25,8 @@ case class Markup private(n: Int, markup: Vector[Vector[Set[Int]]]) {
    *
    * @return (cell, values) tuples where the number of values is greater than 1
    */
-  def unsolved =
-    for (r <- (1 to n); c <- (1 to n); values = markup(r - 1)(c - 1); if (values.size > 1)) yield (Cell(r, c), values)
+  def unsolved: immutable.IndexedSeq[(Cell, Set[Int])] =
+    for (r <- 1 to n; c <- 1 to n; values = markup(r - 1)(c - 1); if values.size > 1) yield (Cell(r, c), values)
 
   /**
    * Get the values in a cell
@@ -31,7 +34,7 @@ case class Markup private(n: Int, markup: Vector[Vector[Set[Int]]]) {
    * @param cell a cell
    * @return values in the cell
    */
-  def apply(implicit cell: Cell) = markup(cell.row - 1)(cell.col - 1)
+  def apply(implicit cell: Cell): Set[Int] = markup(cell.row - 1)(cell.col - 1)
 
   /**
    * Assign a value to a cell
@@ -49,7 +52,7 @@ case class Markup private(n: Int, markup: Vector[Vector[Set[Int]]]) {
    * @param kv cell/values pair
    * @return new markup with the cell values set
    */
-  def +(kv: (Cell, Set[Int])) = this(kv._1) = kv._2
+  def +(kv: (Cell, Set[Int])): Markup = this(kv._1) = kv._2
 
   /**
    * Specify the values for a set of cells
@@ -57,7 +60,7 @@ case class Markup private(n: Int, markup: Vector[Vector[Set[Int]]]) {
    * @param xs cell/values pairs
    * @return new markup with the cell values set
    */
-  def ++(xs: GenTraversableOnce[(Cell, Set[Int])]) = {
+  def ++(xs: GenTraversableOnce[(Cell, Set[Int])]): Markup = {
     Markup(n, (markup /: xs) {
       case (m, (cell, values)) => setCellValues(m, cell, values)
     })
@@ -70,10 +73,10 @@ case class Markup private(n: Int, markup: Vector[Vector[Set[Int]]]) {
   /**
    * Matrix of numbers, delimited with commas if some of the cells could contain numbers with multiple digits
    */
-  override def toString = {
+  override def toString: String = {
     val delimiter = if (n < 10) "" else ","
-    matrixToString(for (row <- (0 to n - 1)) yield {
-      for (col <- 0 to n - 1; values = markup(row)(col)) yield {
+    matrixToString(for (row <- 0 until n) yield {
+      for (col <- 0 until n; values = markup(row)(col)) yield {
         if (values.isEmpty) "." else values.toSeq.sorted.mkString(delimiter)
       }
     })
@@ -107,9 +110,9 @@ object Markup {
     // 123 123 123
     def markups: Parser[List[Markup]] = repsep(markup, rep1(eol)) <~ opt(rep(eol))
 
-    implicit def parseMarkupsString(s: String) = parseAll(markups, s)
+    implicit def parseMarkupsString(s: String): MarkupParser.ParseResult[List[Markup]] = parseAll(markups, s)
 
-    implicit def parseMarkupsFile(r: Reader[Char]) = parseAll(markups, r)
+    implicit def parseMarkupsFile(r: Reader[Char]): MarkupParser.ParseResult[List[Markup]] = parseAll(markups, r)
   }
 
   /**
@@ -118,7 +121,7 @@ object Markup {
    * @param n markup dimension
    * @return maximally ambiguous markup
    */
-  def apply(n: Int) = new Markup(n, Vector.tabulate(n, n)((_, _) => Set[Int]((1 to n): _*)))
+  def apply(n: Int) = new Markup(n, Vector.tabulate(n, n)((_, _) => Set[Int](1 to n: _*)))
 
   /**
    * Create a markup from a square matrix of integer sets
@@ -146,7 +149,7 @@ object Markup {
   /**
    * Read a set of markups from a file or string
    */
-  def parseMarkups(implicit r: MarkupParser.ParseResult[List[Markup]]) = r match {
+  def parseMarkups(implicit r: MarkupParser.ParseResult[List[Markup]]): List[Markup] = r match {
     case MarkupParser.Success(a, _) => a
     case e: MarkupParser.Failure => throw new IllegalArgumentException(e.toString())
   }

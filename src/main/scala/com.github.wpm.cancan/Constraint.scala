@@ -12,9 +12,9 @@ abstract class Constraint(region: Seq[Cell]) extends ((Markup) => Option[Seq[(Ce
   /**
    * The cells to which this constraint applies
    */
-  val cells = region.sorted
+  val cells: Seq[Cell] = region.sorted
 
-  lazy val size = cells.size
+  lazy val size: Int = cells.size
 
   /**
    * Apply the constraint to the markup
@@ -30,7 +30,7 @@ abstract class Constraint(region: Seq[Cell]) extends ((Markup) => Option[Seq[(Ce
   }
 
   protected def changedValues(cells: Seq[Cell], before: Seq[Set[Int]], after: Seq[Set[Int]]): Seq[(Cell, Set[Int])] = {
-    List(cells.zip(before), cells.zip(after)).transpose.filterNot(l => l(0)._2 == l(1)._2).map(_(1))
+    List(cells.zip(before), cells.zip(after)).transpose.filterNot(l => l.head._2 == l(1)._2).map(_(1))
   }
 
   /**
@@ -41,7 +41,7 @@ abstract class Constraint(region: Seq[Cell]) extends ((Markup) => Option[Seq[(Ce
    */
   protected def values(markup: Markup): Seq[Set[Int]] = cells.map(markup(_))
 
-  protected def solvedValues(values: Seq[Set[Int]]) = values.filter(_.size == 1)
+  protected def solvedValues(values: Seq[Set[Int]]): Seq[Set[Int]] = values.filter(_.size == 1)
 
   /**
    * Changes this constraint makes to a sequence of cell values
@@ -51,7 +51,7 @@ abstract class Constraint(region: Seq[Cell]) extends ((Markup) => Option[Seq[(Ce
    */
   protected def constrainedValues(values: Seq[Set[Int]]): Option[Seq[Set[Int]]] = None
 
-  override def toString() = {
+  override def toString(): String = {
     val (r, c) = (cells.head.row, cells.head.col)
     if (cells.forall(_.row == r))
       "Row " + r
@@ -69,14 +69,14 @@ abstract class Constraint(region: Seq[Cell]) extends ((Markup) => Option[Seq[(Ce
  * @param region region of cells in the markup
  */
 case class PreemptiveSetConstraint(region: Seq[Cell]) extends Constraint(region) {
-  override protected def constrainedValues(values: Seq[Set[Int]]) = {
+  override protected def constrainedValues(values: Seq[Set[Int]]): Some[Seq[Set[Int]]] = {
     // e.g. values = List(Set(1, 2, 3), Set(1, 2, 3, 4), Set(1, 2), Set(2, 3), Set(1, 2, 3, 4, 5, 6), Set(1, 2, 3, 4, 5, 6))
     // preemptiveSets = List((Set(1, 2, 3), Set(0, 2, 3)), (Set(1, 2, 3, 4), Set(0, 1, 2, 3)))
     val preemptiveSets = values.filter(_.size < values.size).map {
       v => (v, values.zipWithIndex.filter(_._1.subsetOf(v)))
     }.filter(t => t._1.size == t._2.size).map(t => (t._1, Set() ++ t._2.map(_._2)))
     // removeSets = List((Set(1, 2, 3), Set(5, 1, 4)), (Set(1, 2, 3, 4), Set(5, 4)))
-    val removeSets = preemptiveSets.map(p => (p._1, Set() ++ (0 to values.size - 1) -- p._2))
+    val removeSets = preemptiveSets.map(p => (p._1, Set() ++ values.indices -- p._2))
     // remove = Map(5 -> Set(1, 2, 3, 4), 1 -> Set(1, 2, 3), 4 -> Set(1, 2, 3, 4))
     val remove = (Map[Int, Set[Int]]().withDefaultValue(Set()) /: removeSets) {
       case (m, p) => m ++ p._2.map(r => r -> (m(r) ++ p._1))
@@ -98,10 +98,10 @@ case class PreemptiveSetConstraint(region: Seq[Cell]) extends Constraint(region)
 case class AllDifferentConstraint(region: Seq[Cell]) extends Constraint(region) {
   private def isDistinct[T](s: Seq[T]) = s.size == s.distinct.size
 
-  override protected def constrainedValues(values: Seq[Set[Int]]) =
+  override protected def constrainedValues(values: Seq[Set[Int]]): Option[Seq[Set[Int]]] =
     if (isDistinct(solvedValues(values))) Some(values) else None
 
-  override def toString() = "Latin Square: " + super.toString
+  override def toString(): String = "Latin Square: " + super.toString
 }
 
 /**
@@ -111,11 +111,11 @@ case class AllDifferentConstraint(region: Seq[Cell]) extends Constraint(region) 
  */
 case class UniquenessConstraint(region: Seq[Cell]) extends Constraint(region) {
 
-  override protected def constrainedValues(values: Seq[Set[Int]]) = {
+  override protected def constrainedValues(values: Seq[Set[Int]]): Some[Seq[Set[Int]]] = {
     Some(values.map {
       value =>
       // Values only appearing in this cell.
-        val u = value -- (values.filter(y => !(y eq value)).reduceLeft(_ | _))
+        val u = value -- values.filter(y => !(y eq value)).reduceLeft(_ | _)
         u.size match {
           case 1 => u
           case _ => value
@@ -123,7 +123,7 @@ case class UniquenessConstraint(region: Seq[Cell]) extends Constraint(region) {
     })
   }
 
-  override def toString() = "Uniqueness: " + super.toString
+  override def toString(): String = "Uniqueness: " + super.toString
 }
 
 
@@ -134,7 +134,7 @@ abstract class CageConstraint(value: Int, region: Seq[Cell]) extends Constraint(
   protected val symbol: String
   lazy protected val nekNekSymbol: String = symbol
 
-  override def toString() = value + "" + symbol
+  override def toString(): String = value + "" + symbol
 
   /**
    * String representation of the constraint in the format recognized by the
@@ -163,7 +163,7 @@ case class SpecifiedConstraint(value: Int, cell: Cell) extends CageConstraint(va
  * A cage constraint whose values must combine arithmetically to a specified value.
  */
 abstract class ArithmeticConstraint(value: Int, region: Seq[Cell]) extends CageConstraint(value, region) {
-  override protected def constrainedValues(values: Seq[Set[Int]]) = {
+  override protected def constrainedValues(values: Seq[Set[Int]]): Option[Seq[Set[Int]]] = {
     val f = fills(values)
     if (f.isEmpty) None else Some(f.transpose.map(Set() ++ _))
   }
@@ -188,7 +188,7 @@ abstract class ArithmeticConstraint(value: Int, region: Seq[Cell]) extends CageC
 abstract class NonAssociativeConstraint(value: Int, cell1: Cell, cell2: Cell)
   extends ArithmeticConstraint(value, Seq(cell1, cell2)) {
 
-  override protected def fills(values: Seq[Set[Int]]) =
+  override protected def fills(values: Seq[Set[Int]]): Seq[Seq[Int]] =
     (for (a <- values.head; b <- values.last; if satisfied(a, b) || satisfied(b, a)) yield Seq(a, b)).toSeq
 
   /**
@@ -205,7 +205,7 @@ abstract class NonAssociativeConstraint(value: Int, cell1: Cell, cell2: Cell)
  * The difference of a pair of cells must equal a specified value.
  */
 case class MinusConstraint(value: Int, cell1: Cell, cell2: Cell) extends NonAssociativeConstraint(value, cell1, cell2) {
-  override protected def satisfied(x: Int, y: Int) = x - y == value
+  override protected def satisfied(x: Int, y: Int): Boolean = x - y == value
 
   override protected val symbol = "-"
 }
@@ -214,7 +214,7 @@ case class MinusConstraint(value: Int, cell1: Cell, cell2: Cell) extends NonAsso
  * The quotient of a pair of cells must equal a specified value.
  */
 case class DivideConstraint(value: Int, cell1: Cell, cell2: Cell) extends NonAssociativeConstraint(value, cell1, cell2) {
-  override protected def satisfied(x: Int, y: Int) = x % y == 0 && x / y == value
+  override protected def satisfied(x: Int, y: Int): Boolean = x % y == 0 && x / y == value
 
   override protected val symbol = "/"
 }
@@ -223,7 +223,7 @@ case class DivideConstraint(value: Int, cell1: Cell, cell2: Cell) extends NonAss
  * A set of cells whose values combine with an associative operator
  */
 abstract class AssociativeConstraint(value: Int, region: Seq[Cell]) extends ArithmeticConstraint(value, region) {
-  override protected def fills(values: Seq[Set[Int]]) = cartesianMonoid(values)
+  override protected def fills(values: Seq[Set[Int]]): List[List[Int]] = cartesianMonoid(values)
 
   /**
    * Take the Cartesian product of a set of integers and select the elements whose combination on a monoid is equal
@@ -236,7 +236,7 @@ abstract class AssociativeConstraint(value: Int, region: Seq[Cell]) extends Arit
     @tailrec
     def cmRec(ys: Seq[Traversable[Int]], acc: List[(List[Int], Int)]): List[List[Int]] = ys match {
       case Nil => acc.filter(_._2 == value).map(_._1.reverse)
-      case z :: zs => cmRec(zs, for (a <- acc; b <- z; c = combine(a._2, b); if (c <= value)) yield (b :: a._1, c))
+      case z :: zs => cmRec(zs, for (a <- acc; b <- z; c = combine(a._2, b); if c <= value) yield (b :: a._1, c))
     }
     cmRec(ys, List((Nil, identity)))
   }
@@ -259,7 +259,7 @@ abstract class AssociativeConstraint(value: Int, region: Seq[Cell]) extends Arit
  * The sum of the values in a set of cells must equal a specified value.
  */
 case class PlusConstraint(value: Int, region: Seq[Cell]) extends AssociativeConstraint(value, region) {
-  override protected def combine(x: Int, y: Int) = x + y
+  override protected def combine(x: Int, y: Int): Int = x + y
 
   override protected val identity = 0
 
@@ -270,7 +270,7 @@ case class PlusConstraint(value: Int, region: Seq[Cell]) extends AssociativeCons
  * The product of the values in a set of cells must equal a specified value.
  */
 case class TimesConstraint(value: Int, region: Seq[Cell]) extends AssociativeConstraint(value, region) {
-  override protected def combine(x: Int, y: Int) = x * y
+  override protected def combine(x: Int, y: Int): Int = x * y
 
   override protected val identity = 1
 
@@ -285,7 +285,7 @@ object Constraint {
   def constraintMap(constraints: Set[_ <: Constraint]): Map[Cell, Set[Constraint]] = {
     (Map[Cell, Set[Constraint]]() /:
       (for (constraint <- constraints; cell <- constraint.cells)
-      yield (cell -> constraint))) {
+      yield cell -> constraint)) {
       case (m, (cell, constraint)) => m + (cell -> (m.getOrElse(cell, Set()) + constraint))
     }
   }

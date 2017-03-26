@@ -11,7 +11,7 @@ class GeneratorSpec extends FlatSpec {
       def adjacent[N](edges: Map[N, List[N]])(n: N): List[N] = edges.getOrElse(n, Nil)
       val edges = Map('a -> List('b, 'c), 'b -> List('a, 'c), 'c -> List('a, 'b),
         'd -> List('e), 'e -> List('d), 'f -> Nil)
-      val nodes = edges.keys ++ edges.values.flatMap(x => x)
+      val nodes = edges.keys ++ edges.values.flatten
       Set() ++ Generator.connectedComponents(nodes, adjacent(edges)(_: Symbol), 3)
     }
   }
