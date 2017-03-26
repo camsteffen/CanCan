@@ -10,4 +10,4 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 
 initialCommands in console := "import com.github.wpm.cancan._"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.2" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
