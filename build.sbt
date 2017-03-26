@@ -1,5 +1,3 @@
-import AssemblyKeys._
-
 name := "CanCan"
 
 organization := "com.github.wpm.cancan"
@@ -13,5 +11,3 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 initialCommands in console := "import com.github.wpm.cancan._"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "1.8" % "test"
-
-assemblySettings
